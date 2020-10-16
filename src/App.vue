@@ -1,18 +1,17 @@
 <template>
   <div id="app" class="normal">
-    <text-input-section/>
+
     <todo-list-view/>
+
   </div>
 </template>
 
 <script>
-import textInputSection from './components/text-input-section';
 import todoListView from './components/todo-list-view';
 
 export default {
   name: 'App',
   components: {
-    "text-input-section": textInputSection,
     "todo-list-view": todoListView
   }
 }

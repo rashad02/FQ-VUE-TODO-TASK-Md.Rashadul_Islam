@@ -1,29 +1,106 @@
 <template>
   <footer class="footer">
       <span class="todoCount">
+        <template>{{ getTodoListText(todoListCount) }}</template>
       </span>
-    <ul class= 'filters'>
-      <li>
-        <a class="selected">
-        
+    <ul class='filters' v-if="filters">
+      <li v-for="filter in filters" :key="filter">
+        <a :class="{'selected': selectedFilter === filter}" @click="setSelectedFilter(filter)">
+          {{ getFilterText(filter) }}
         </a>
       </li>
-
     </ul>
-    <button class="clearCompleted">
+    <button class="clearCompleted" @click="removeCompletedTask()">
       Clear completed
     </button>
   </footer>
 </template>
 
 <script>
+import _ from "lodash";
+
 export default {
 
-  data(){
+  data() {
     return {
+      todoList: [],
+      selectedFilter: "SHOW_ALL",
+      todoListCount: 0,
+      filters: ["SHOW_ALL", "SHOW_COMPLETED", "SHOW_ACTIVE"],
+      getTodoListText: function (count) {
+        let todoListCount = count,
+            text = "";
+
+        if (todoListCount === 0) {
+          text = "No item left"
+        } else {
+          if (todoListCount > 1) {
+            text = `${todoListCount} items left`
+          } else {
+            text = `${todoListCount} item left`
+          }
+        }
+        return text;
+      },
+      getFilterText: function (filterName) {
+        let filterText = "";
+        if (filterName === "SHOW_ALL") filterText = "All";
+        if (filterName === "SHOW_COMPLETED") filterText = "Completed";
+        if (filterName === "SHOW_ACTIVE") filterText = "Active";
+
+        return filterText;
+      }
+    }
+  },
+  methods: {
+    removeCompletedTask: function () {
+      let instance = this,
+          todoList = JSON.parse(localStorage.getItem("todo", this)) || [],
+          activeTodoList = [];
+
+      activeTodoList = _.filter(todoList, todo => {
+        return !todo.isCompleted;
+      });
+      console.log("after remove: ", activeTodoList);
+      localStorage.setItem("todo", JSON.stringify(activeTodoList));
+      this.todoListCount = currentTodoCountByFilter(instance.selectedFilter);
+      instance.$emit('customEvent', {type: 'clear_completed'});
+    },
+    setSelectedFilter: function (filterName) {
+      this.selectedFilter = filterName;
+
+      this.todoListCount = currentTodoCountByFilter(filterName);
+      this.$emit('customEvent', {type: 'filter_updated', filter: filterName});
 
     }
+  },
+  mounted() {
+
+    this.$nextTick(function () {
+      this.todoList = JSON.parse(localStorage.getItem('todo')) || [];
+      this.todoListCount = currentTodoCountByFilter();
+    })
+
+  },
+
+}
+const currentTodoCountByFilter = function (filterName) {
+  let currentTodoList = JSON.parse(localStorage.getItem('todo')) || [],
+      todoCount;
+
+  if (!filterName || filterName === "SHOW_ALL") {
+    todoCount = _.size(currentTodoList);
+  } else {
+    if (filterName === "SHOW_COMPLETED") {
+      currentTodoList = _.filter(currentTodoList, todo => todo.isCompleted);
+      todoCount = _.size(currentTodoList);
+    } else {
+      currentTodoList = _.filter(currentTodoList, todo => !todo.isCompleted);
+      todoCount = _.size(currentTodoList);
+    }
   }
+
+  return todoCount;
 }
 </script>
 
